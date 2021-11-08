@@ -6,7 +6,113 @@ date: "11/7/2021"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+# Attach packages
+library(tidyverse)
+library(effsize)
+library(broom)
+library(here)
+library(kableExtra)
+library(lubridate)
 ```
+
+```{r, include = FALSE}
+# Read in the data
+bonanza_hares <- read_csv(here("data", "bonanza_hares.csv"))
+```
+
+## Introduction
+
+A 4 - 5 sentence "mini-introduction" to what this study is exploring, including basic background information about the subject, site and study (with citations as needed), and a brief overview of what is included in the exploratory report.
+
+## Data and analyses
+
+A 3 - 4 sentence section in which you briefly describe the data, including citation & credit as needed, and provide an overview of the main analysis, statistical methods and tools used.
+
+## Juvenile hare initial investigation 
+
+### Annual juvenile hare trap counts 
+
+Count the total number of juvenile hare trappings during each year of the study, and create a finalized data visualization of the counts by year. Include a figure caption below the figure in your report. 
+
+```{r, include = FALSE}
+# Wrangle to find total number of hare trappings per year
+
+hare_counts <- bonanza_hares %>% 
+  mutate(date_new = mdy(date)) %>%
+  mutate(year = year(date_new)) %>%
+  group_by(year) %>%
+  summarize(count = n()) 
+```
+
+```{r, include = FALSE}
+# Summary Stats
+hare_count_stats <- hare_counts %>%
+  summarize(mean = round(mean(count), 2),
+            max = max(count),
+            min = min(count),
+            median = median(count))
+```
+
+```{r, include = TRUE}
+# Visualize hare trappings per year
+
+hare_counts %>%
+  ggplot(aes(x = year, y = count)) +
+  geom_col(fill = "skyblue1") +
+  scale_x_continuous(breaks = 1998:2012) +
+  labs(x = "\nYear", y = "Number of hare trappings\n") +
+  theme_bw()
+```
+
+**Figure 1:** Insert Caption here.
+
+Then, in 3 - 4 sentences below your figure, describe major takeaways from your graph about total snowshoe hare trappings at the site. You might consider:
+
+What were the minimum and maximum counts of juvenile hare trappings?
+Mean or median annual number of juvenile hares trapped?
+General/notable trends?
+These are absolute counts, but this count is also impacted by effort (e.g. the number of days and number of traps in the study each year). What would you suggest be done moving forward (you are not expected to actually do this) to standardize the juvenile hare population in future analyses?
+
+### Visualize juvenile hare weights
+
+Create a finalized data visualization (or visualizations) in which you compare **juvenile hare weights by sex and site (grid)** (ignore other variables). You should include groups where these variables are not recorded (`NA`). Include finalized figure captions below your visualization(s).
+
+Then, in 2 - 3 sentences below your visualization(s) describe in text the main takeaways that you would want the audience to understand from your figures.
+
+Note: There are multiple ways to visualize these comparisons. We encourage you to think carefully then make decisions about how to visualize these comparisons, including:
+
+Can I use faceting to simplify the comparisons into manageable pieces?
+Am I showing the audience the data, summary statistics, or both?
+Have I updated graph labels, headers in facets, etc. to make it as straightforward as possible for viewers?
+Have I simplified and finalized my data visualization(s) to include components that are useful for the audience?
+
+### Juvenile weight comparison 
+
+Further compare mean weights for **juvenile male and female snowshoe hares** included in this study. In this section, you should include:
+
+A finalized table containing the mean, standard deviation, and sample size for male and female juvenile snowshoe hares, with a table caption (remember, a table caption should be placed *above* the table in your report)
+A 2 - 3 sentence comprehensive statement of the means comparison, including at least:
+The actual difference in means
+Effect size (Cohen's *d*) (see effsize::cohen.d() example in the Lab 5 key)
+Outcome of an unpaired two-sample t-test
+ 
+Note: Exploratory graphs (e.g. histograms, QQ-plots) to explore assumptions of your t-test should not show up in your final knitted document, but you DO still need to create and think about them to determine whether a t-test is appropriate. If you want keep the code chunk containing those exploratory visualizations in your .Rmd but not appear in the knitted doc, you can add `include = FALSE` in the code chunk header.
+
+### Relationship between juvenile weight & hind foot length
+
+Explore the relationship between juvenile snowshoe hare hind foot length (variable `hindft`, recorded in millimeters), and weight. Include all juvenile hares in the study. Create a final visualization of juvenile hare hind foot length versus weight. Include a figure caption.
+
+Upon seeing your graph, your “boss” tells you to try out linear regression to describe how juvenile snowshoe hare weight changes with respect to hind foot length. Try it out (the only variables you are expected to include here are hind foot length and weight, using data for all juvenile hares in the data, e.g. you are not expected to explore impacts of sex, site, etc.), and check the model diagnostics.
+
+In 2 - 3 sentences below your figure, describe the outcome of your linear regression exploration (e.g. slope interpretation, R2 value, and Pearson's r correlation) and touch briefly on which assumption(s) of linear regression may be a concern, and additional thoughts you have about how well (or not well…) the linear model describes the relationship. What worries you? 
+
+## Summary
+
+Include a very short summary describing your main findings from your juvenile hares exploration (bullet points are fine)
+
+## Citations
+
+**Data citation:** Kielland, K., F.S. Chapin, R.W. Ruess, and Bonanza Creek LTER. 2017. Snowshoe hare physical data in Bonanza Creek Experimental Forest: 1999-Present ver 22. Environmental Data Initiative. https://doi.org/10.6073/pasta/03dce4856d79b91557d8e6ce2cbcdc14
 
