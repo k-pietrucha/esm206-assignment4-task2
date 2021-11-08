@@ -1,0 +1,12 @@
+---
+title: 'Assignment 4, Task 3: Mini exploratory report on juvenile snowshoe hares in
+  Bonanza Creek LTER'
+author: "Katie Pietrucha"
+date: "11/7/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
