@@ -53,7 +53,8 @@ hare_count_stats <- hare_counts %>%
   summarize(mean = round(mean(count), 2),
             max = max(count),
             min = min(count),
-            median = median(count))
+            median = median(count),
+            sd = sd(count))
 ```
 
 ```{r, include = TRUE}
@@ -61,13 +62,14 @@ hare_count_stats <- hare_counts %>%
 
 hare_counts %>%
   ggplot(aes(x = year, y = count)) +
-  geom_col(fill = "skyblue1") +
+  geom_col(fill = "cadetblue3") +
   scale_x_continuous(breaks = 1999:2012) +
+  scale_y_continuous(breaks = seq(0, 150, by = 25)) +
   labs(x = "\nYear", y = "Number of juvenile hare trappings\n") +
   theme_bw()
 ```
 
-**Figure 1:** Insert Caption here.
+**Figure 1:** Total number of juvenile hare trappings by year (1999-2012).
 
 Then, in 3 - 4 sentences below your figure, describe major takeaways from your graph about total snowshoe hare trappings at the site. You might consider:
 
@@ -80,44 +82,36 @@ These are absolute counts, but this count is also impacted by effort (e.g. the n
 
 Create a finalized data visualization (or visualizations) in which you compare **juvenile hare weights by sex and site (grid)** (ignore other variables). You should include groups where these variables are not recorded (`NA`). Include finalized figure captions below your visualization(s).
 
-```{r}
+```{r, include = FALSE}
 # Wrangle juvenile hare weights by sex and site
 
 hare_weights <- bonanza_hares %>%
   filter(age == "j") %>%
-  group_by(sex, weight, grid) %>%
+    mutate(grid_full = case_when(
+    grid == "bonrip" ~ "Bonanza Riparian",
+    grid == "bonmat" ~ "Bonanza Mature",
+    grid == "bonbs" ~ "Mature Lowland Black Spruce")) %>%
+  drop_na(weight) %>%
+  group_by(sex, weight, grid_full) %>%
   summarize()
 ```
 
-```{r}
+```{r, include = TRUE}
 # Visualize juvenile hare weights
 hare_weights %>%
-    ggplot(aes(x = sex, y = weight, fill = sex)) +
-  geom_boxplot(alpha = 0.7) +
-  facet_wrap(~ grid) +
-  stat_summary(fun.y=mean, geom="point", shape=20, size=5, color="blue", fill="blue") +
-  theme_bw()
+  ggplot(aes(x = sex, y = weight, fill = sex)) +
+  geom_jitter(aes(color = sex)) + 
+  geom_boxplot(alpha = 0.7, fill = NA) +
+  facet_wrap(~ grid_full) +
+  scale_color_manual(values = c("lightcoral", "darkseagreen3", "grey")) +
+  stat_summary(fun.y = mean, geom = "point", shape = 20, size = 4 , color = "black") + 
+  theme_bw() +
+  labs(x = "\nSex", y = "Hare weight (grams)\n") +
+  theme(legend.position = "none") +
+  scale_x_discrete(labels = c("Female","Male","N/A"))
 ```
 
-```{r}
-# Summary statistics for weights
-
-weight_stats <- hare_weights %>%
-  group_by(grid, sex) %>%
-  summarize(mean = mean(weight, na.rm = TRUE),
-            median = median(weight, na.rm = TRUE),
-            sd = sd(weight, na.rm = TRUE))
-```
-
-```{r}
-# Visualize summary statistics
-
-weight_stats %>%
-  ggplot(aes(x = grid, y = mean, fill = grid)) +
-  geom_col() +
-  facet_wrap(~ sex)
-```
-
+**Figure 2:** Insert caption here
 
 Then, in 2 - 3 sentences below your visualization(s) describe in text the main takeaways that you would want the audience to understand from your figures.
 
@@ -133,6 +127,72 @@ Have I simplified and finalized my data visualization(s) to include components t
 Further compare mean weights for **juvenile male and female snowshoe hares** included in this study. In this section, you should include:
 
 A finalized table containing the mean, standard deviation, and sample size for male and female juvenile snowshoe hares, with a table caption (remember, a table caption should be placed *above* the table in your report)
+
+```{r, include = FALSE}
+# Summary statistics for weights
+
+weight_stats <- hare_weights %>%
+  mutate(sex = case_when(
+    sex == "f" ~ "Female",
+    sex == "m" ~ "Male")) %>%
+  group_by(sex) %>%
+  drop_na(sex) %>%
+  summarize(mean = round(mean(weight, na.rm = TRUE), 2),
+            sd = round(sd(weight, na.rm = TRUE), 2),
+            sample_size = n())
+```
+
+```{r, include = FALSE}
+# Visualize data exploration with histograms and Q-Q plots
+
+ggplot(data = hare_weights, aes(x = weight)) +
+  geom_histogram(bins = 15) +
+  facet_wrap(~ sex)
+
+ggplot(data = hare_weights, aes(sample = weight)) +
+  geom_qq() +
+  facet_wrap(~ sex)
+```
+
+```{r, include = FALSE}
+# Split into groups for t-test
+
+female_sample <- hare_weights %>% 
+  filter(sex == "f") %>% 
+  drop_na(weight) %>%
+  pull(weight)
+
+male_sample <- hare_weights %>% 
+  filter(sex == "m") %>% 
+  drop_na(weight) %>%
+  pull(weight)
+```
+
+```{r, include = FALSE}
+# Perform t-test
+
+weight_t <- t.test(male_sample, female_sample)
+
+weight_t
+```
+
+```{r, include = FALSE}
+# Cohen's d
+
+weight_cohen <- cohen.d(male_sample, female_sample)
+
+weight_cohen
+```
+
+```{r, include = TRUE}
+# Create table
+
+  kbl(weight_stats, caption = "<center><strong>Table 1: Summary Statistics </strong>: Insert caption here</center>", col.names = c("Sex", "Mean (g)", "Standard Deviation (g)", "Sample Size")) %>%
+  kable_paper(full_width = F) %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) 
+```
+
+
 A 2 - 3 sentence comprehensive statement of the means comparison, including at least:
 The actual difference in means
 Effect size (Cohen's *d*) (see effsize::cohen.d() example in the Lab 5 key)
@@ -144,7 +204,54 @@ Note: Exploratory graphs (e.g. histograms, QQ-plots) to explore assumptions of y
 
 Explore the relationship between juvenile snowshoe hare hind foot length (variable `hindft`, recorded in millimeters), and weight. Include all juvenile hares in the study. Create a final visualization of juvenile hare hind foot length versus weight. Include a figure caption.
 
+```{r, include = FALSE}
+# Filter data for all juvenile hares
+
+juve_hares <- bonanza_hares %>%
+  filter(age == "j") 
+```
+
+```{r, include = TRUE}
+# Compare juvenile hare hind foot length and weight
+
+juve_hares %>%
+  ggplot(aes(x = weight, y = hindft)) +
+  geom_point(color = "cadetblue3") +
+  labs(x = "\nJuvenile hare weight (grams)", y = "Hind foot length (mm)\n") +
+  theme_bw() 
+  
+```
+
+**Figure 3:** Insert caption here.
+
 Upon seeing your graph, your “boss” tells you to try out linear regression to describe how juvenile snowshoe hare weight changes with respect to hind foot length. Try it out (the only variables you are expected to include here are hind foot length and weight, using data for all juvenile hares in the data, e.g. you are not expected to explore impacts of sex, site, etc.), and check the model diagnostics.
+
+```{r, include = FALSE}
+# Linear regression
+
+hare_lm <- lm(weight ~ hindft, data = juve_hares)
+
+hare_lm_tidy <- tidy(hare_lm)
+
+hare_lm_tidy
+```
+
+```{r, include = FALSE}
+# Pearson's r
+
+hares_cor <- cor.test(juve_hares$weight, juve_hares$hindft)
+
+hares_cor_tidy <- tidy(hares_cor)
+
+hares_cor_tidy
+```
+
+
+```{r, include = FALSE}
+# Check model diagnostics
+
+plot(hare_lm)
+```
 
 In 2 - 3 sentences below your figure, describe the outcome of your linear regression exploration (e.g. slope interpretation, R2 value, and Pearson's r correlation) and touch briefly on which assumption(s) of linear regression may be a concern, and additional thoughts you have about how well (or not well…) the linear model describes the relationship. What worries you? 
 
